@@ -12,6 +12,7 @@ class Snake:
         self.color = (120, 150, 25)
         self.score = len(self.body) - 3
         self.crunch_sound = pygame.mixer.Sound('sounds/sound_crunch.wav')
+        self.is_alive = True
 
     def draw_snake(self):
         for block in self.body:
@@ -32,7 +33,11 @@ class Snake:
 
     def play_crunch_sound(self):
         self.crunch_sound.play()
-        
+    
+    def reset(self):
+            self.body =  [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
+            self.direction = Vector2(0, 0)
+
 
 class Fruit:
     def __init__(self):
@@ -125,34 +130,28 @@ class Main:
         for snake in self.snakes:
             # Check if snake is outside the screen
             if not 0 <= snake.body[0].x < CELL_NUMBER or not 0 <= snake.body[0].y < CELL_NUMBER:
+                snake.is_alive = False
                 self.game_over()
             # Check if snake is touching itself
             for block in snake.body[1:]:
                 if block == snake.body[0]:
+                    snake.is_alive = False
                     self.game_over()
                 
 
     def game_over(self):
-            self.snakes[0].body =  [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
-            self.snakes[0].direction = Vector2(0, 0)
-            if len(self.snakes) == 2:
-                self.snakes[1].body = [Vector2(5, 5), Vector2(4, 5), Vector2(3, 5)]
-                self.snakes[1].direction = Vector2(0, 0)
-
+        for snake in self.snakes:
+            if snake.is_alive == False:
+                snake.reset() 
+            
 
     def draw_grass(self):
         grass_color = (167, 209, 61)
-        for row in range(CELL_NUMBER):
-            if row % 2: 
-                for col in range(CELL_NUMBER):
-                    if col % 2 == 0:
-                        grass_rect = pygame.Rect(col * CELL_SIZE , row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                        pygame.draw.rect(screen, grass_color, grass_rect)
-            else: 
-                for col in range(CELL_NUMBER):
-                    if col % 2 != 0:
-                        grass_rect = pygame.Rect(col * CELL_SIZE , row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                        pygame.draw.rect(screen, grass_color, grass_rect)
+        for i in range(CELL_NUMBER):
+            for j in range(CELL_NUMBER):
+                if (i+j)%2 == 0:
+                    grass_rect = pygame.Rect(i*CELL_SIZE,j*CELL_SIZE,CELL_SIZE,CELL_SIZE)
+                    pygame.draw.rect(screen, grass_color, grass_rect)
 
     def draw_score(self):
             score_surface = game_font.render(f"Snake Green: {str(self.snakes[0].score)}", True, (56,74,12))
@@ -202,8 +201,8 @@ while True:
             pygame.quit()
             exit()
         if event.type == SCREEN_UPDATE:
-            main.update()
             pygame.time.set_timer(SCREEN_UPDATE, MS_UPDATE)
+            main.update()
         if event.type == pygame.KEYDOWN:
             # Events and conditiosn for avoid that the snake move to reverse
             main.inputs()
