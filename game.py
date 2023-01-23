@@ -11,32 +11,40 @@ class Snake:
         self.new_block = False
         self.color = (120, 150, 25)
         self.score = len(self.body) - 3
-        self.crunch_sound = pygame.mixer.Sound('sounds/sound_crunch.wav')
         self.is_alive = True
+        self.crunch_sound = pygame.mixer.Sound('sounds/sound_crunch.wav')
 
     def draw_snake(self):
         for block in self.body:
             # create a rect
-            block_rect = pygame.Rect(
-                block.x * CELL_SIZE, block.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            block_rect = pygame.Rect((block.x * CELL_SIZE), (block.y * CELL_SIZE), CELL_SIZE, CELL_SIZE)
             # draw a rect
             pygame.draw.rect(screen, self.color, block_rect)
 
     def move_snake(self):
         if self.new_block == True:
             body_copy = self.body[:]
+            body_copy.insert(0, body_copy[0] + self.direction)
+            self.body = body_copy[:]
             self.new_block = False
         else:
             body_copy = self.body[:-1]
-        body_copy.insert(0, body_copy[0] + self.direction)
-        self.body = body_copy[:]
+            body_copy.insert(0, body_copy[0] + self.direction)
+            self.body = body_copy[:]
+        
+    
+    def add_block(self):
+        self.new_block = True
 
     def play_crunch_sound(self):
         self.crunch_sound.play()
     
     def reset(self):
-            self.body =  [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
-            self.direction = Vector2(0, 0)
+        # Si mueres vuelves otra vez
+        self.score = 0
+        self.is_alive = True
+        self.body =  [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
+        self.direction = Vector2(0, 0)
 
 
 class Fruit:
@@ -66,8 +74,9 @@ class Main:
 
     def update(self):
         for snake in self.snakes:
-                snake.move_snake()
+            snake.move_snake()  
         self.check_collision()
+        self.lose_condition()
 
     def draw_elements(self):
         self.draw_grass()
@@ -77,24 +86,18 @@ class Main:
         self.draw_score()
 
     def check_collision(self):
-        global MS_UPDATE
         for snake in self.snakes:
             if self.fruit.pos == snake.body[0]:
                 snake.score += 1
-                if snake.score % 5 == 0:
-                    if MS_UPDATE <= 80 : MS_UPDATE = 80
-                    else:                                        
-                        MS_UPDATE -= 10
-                    print(MS_UPDATE)
                 # reposition the fruit
                 self.fruit.randomize()
                 # play cruch sound
                 snake.play_crunch_sound()
                 # add another block to the snake
-                snake.new_block = True
+                snake.add_block()
         
                 for block in snake.body[1:]:
-                    if self.fruit.pos == block:
+                    if block == self.fruit.pos:
                         self.fruit.randomize()
 
     def inputs(self):
@@ -110,21 +113,21 @@ class Main:
                 self.snakes[0].direction = Vector2(-1, 0)
         if event.key == pygame.K_RIGHT:
             if self.snakes[0].direction.x != -1:
-                self.snakes[0].direction = Vector2(1, 0)
-        if len(self.snakes) == 2:
-            # Snake 2 input
-            if event.key == pygame.K_w:
-                if self.snakes[1].direction.y != 1:
-                    self.snakes[1].direction = Vector2(0, -1)
-            if event.key == pygame.K_s:
-                if self.snakes[1].direction.y != -1:
-                    self.snakes[1].direction = Vector2(0, 1)
-            if event.key == pygame.K_a:
-                if self.snakes[1].direction.x != 1:
-                    self.snakes[1].direction = Vector2(-1, 0)
-            if event.key == pygame.K_d:
-                if self.snakes[1].direction.x != -1:
-                    self.snakes[1].direction = Vector2(1, 0)
+                self.snakes[0].direction = Vector2(1, 0)      
+        
+        # snake2
+        if event.key == pygame.K_w:
+            if self.snakes[1].direction.y != 1:
+                self.snakes[1].direction = Vector2(0, -1)
+        if event.key == pygame.K_s:
+            if self.snakes[1].direction.y != -1:
+                self.snakes[1].direction = Vector2(0, 1)
+        if event.key == pygame.K_a:
+            if self.snakes[1].direction.x != 1:
+                self.snakes[1].direction = Vector2(-1, 0)
+        if event.key == pygame.K_d:
+            if self.snakes[1].direction.x != -1:
+                self.snakes[1].direction = Vector2(1, 0)
 
     def lose_condition(self):
         for snake in self.snakes:
@@ -171,7 +174,7 @@ pygame.init()
 pygame.display.set_caption("Snake: Battle Royale")
 # pygame.display.set_icon() # Set icon
 
-FRAMERATE = 60
+FRAMERATE = 120
 # Tamaño de los cuadrados
 CELL_SIZE = 30
 # Número de cuadrados del grid
@@ -182,16 +185,16 @@ clock = pygame.time.Clock()
 game_font = pygame.font.Font('fonts/Little turtle.ttf', 25)
 
 main = Main()
+fruit = main.fruit
 if len(main.snakes) == 2:
     main.snakes[1].color = (200, 50, 25)
     main.snakes[1].body = [Vector2(5, 5), Vector2(4, 5), Vector2(3, 5)]
-fruit = main.fruit
 
 
 # Timers
 SCREEN_UPDATE = pygame.USEREVENT
 # Este evento se actualizará cada 150ms
-MS_UPDATE = 160
+MS_UPDATE = 200
 pygame.time.set_timer(SCREEN_UPDATE, MS_UPDATE)
 
 
@@ -211,6 +214,5 @@ while True:
 
     screen.fill((175, 215, 70))
     main.draw_elements()
-    main.lose_condition()
     pygame.display.update()
     clock.tick(FRAMERATE)
