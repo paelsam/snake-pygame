@@ -40,7 +40,9 @@ class Snake:
         self.crunch_sound.play()
     
     def reset(self):
+        global MS_UPDATE
         # Si mueres vuelves otra vez
+        MS_UPDATE = 160
         self.score = 0
         self.is_alive = True
         self.body =  [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
@@ -104,6 +106,7 @@ class Main:
                         self.fruit.randomize()
 
     def inputs(self):
+        # Events and conditiosn for avoid that the snake move to reverse
         # snake1
         if event.key == pygame.K_UP:
             if self.snakes[0].direction.y != 1:
@@ -172,25 +175,26 @@ class Main:
     def increase_speed(self):
         global MS_UPDATE
         for snake in self.snakes:
-            if MS_UPDATE <= 80: MS_UPDATE = 80
+            if MS_UPDATE <= 100: MS_UPDATE = 100
             if snake.score > 0 and snake.score % 2 == 0:
-                MS_UPDATE -= 20
+                MS_UPDATE -= 10
     
     def win_condition(self):
         snake_1 = self.snakes[0]
         snake_2 = self.snakes[1]
         if snake_1.score == 5:
             self.game_active = False
-            self.show_winner("You win Green Snake")
+            self.show_winner("You win Green Snake", 'green')
         if snake_2.score == 5:
             self.game_active = False
-            self.show_winner("You win Red Snake")
+            self.show_winner("You win Red Snake", 'red')
     
-    def show_winner(self, text):
+    def show_winner(self, text, color):
         if self.game_active == False:
-            print("Ejecutando")
+            for snake in self.snakes:
+                snake.reset()
             screen.fill((175, 215, 70))
-            text_winner = game_font.render(text, True, 'red')
+            text_winner = game_font.render(text, True, color)
             text_winner_rec = text_winner.get_rect(center = (CELL_SIZE * CELL_NUMBER / 2, CELL_SIZE * CELL_NUMBER / 2))
             text_option = game_font.render("Press any button to continue", True, 'red')
             text_option_rec = text_option.get_rect(center = (CELL_SIZE * CELL_NUMBER / 2, CELL_SIZE * CELL_NUMBER / 2 + 20))
@@ -226,7 +230,7 @@ if len(main.snakes) == 2:
 # Timers
 SCREEN_UPDATE = pygame.USEREVENT
 # Este evento se actualizará cada 150ms
-MS_UPDATE = 200
+MS_UPDATE = 180
 pygame.time.set_timer(SCREEN_UPDATE, MS_UPDATE)
 
 
@@ -240,12 +244,14 @@ while True:
             main.update()
         if event.type == pygame.KEYDOWN:
             main.game_active = True
-            # Events and conditiosn for avoid that the snake move to reverse
             main.inputs()
 
     if main.game_active == True:
         screen.fill((175, 215, 70))
         main.draw_elements()
-        pygame.display.update()
         clock.tick(FRAMERATE)
+    else:
+        main.win_condition()
+    
+    pygame.display.update()
         
